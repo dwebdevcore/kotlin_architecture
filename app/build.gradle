@@ -1,0 +1,137 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+
+repositories {
+    mavenCentral()
+}
+
+android {
+    def globalConfiguration = rootProject.extensions.getByName("ext")
+
+    compileSdkVersion globalConfiguration.getAt("androidCompileSdkVersion")
+    buildToolsVersion globalConfiguration.getAt("androidBuildToolsVersion")
+    defaultConfig {
+        minSdkVersion globalConfiguration.getAt("androidMinSdkVersion")
+        targetSdkVersion globalConfiguration.getAt("androidTargetSdkVersion")
+
+        applicationId globalConfiguration.getAt("androidApplicationId")
+        versionCode globalConfiguration.getAt("androidVersionCode")
+        versionName globalConfiguration.getAt("androidVersionName")
+        testInstrumentationRunner globalConfiguration.getAt("testInstrumentationRunner")
+        testApplicationId globalConfiguration.getAt("testApplicationId")
+    }
+
+    packagingOptions {
+        exclude 'LICENSE.txt'
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/ASL2.0'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE'
+    }
+
+    lintOptions {
+        quiet true
+        abortOnError false
+        ignoreWarnings true
+        disable 'InvalidPackage'            //Some libraries have issues with this.
+        disable 'OldTargetApi'              //Lint gives this warning but SDK 20 would be Android L Beta.
+        disable 'IconDensities'             //For testing purpose. This is safe to remove.
+        disable 'IconMissingDensityFolder'  //For testing purpose. This is safe to remove.
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'build/generated-src/kotlin'
+        androidTest.assets.srcDirs += files("$projectDir/schemas".toString())
+    }
+
+    // Specifies the flavor dimensions you want to use. The order in which you
+    // list each dimension determines its priority, from highest to lowest,
+    // when Gradle merges variant sources and configurations. You must assign
+    // each product flavor you configure to one of the flavor dimensions.
+    flavorDimensions "full"
+
+    productFlavors {
+
+        dev {
+            dimension = "full"
+            buildConfigField 'String', 'API_ENDPOINT', '"https://kronosoft.herokuapp.com/api/v1/"'
+            buildConfigField 'String', 'API_CONSUMER_KEY', '"ClientId"'
+            versionName = "dev " + android.defaultConfig.versionName
+        }
+
+        prod {
+            dimension = "full"
+            buildConfigField 'String', 'API_ENDPOINT', '"https://kronosoft.herokuapp.com/api/v1/"'
+            buildConfigField 'String', 'API_CONSUMER_KEY', '"ClientId"'
+            versionName = android.defaultConfig.versionName
+        }
+    }
+
+    defaultConfig {
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = ["room.schemaLocation":
+                                     "$projectDir/schemas".toString()]
+            }
+        }
+    }
+
+    testOptions {
+        unitTests.all {
+            jvmArgs '-XX:MaxPermSize=256m'
+        }
+    }
+}
+
+kapt {
+    generateStubs = true
+}
+
+dependencies {
+    def dependencies = rootProject.ext.dependencies
+    def testDependencies = rootProject.ext.testDependencies
+
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile(testDependencies.espresso, {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+
+    compile dependencies.kotlin
+
+    compile dependencies.runtime
+    compile dependencies.extensions
+    compile dependencies.roomRuntime
+    kapt dependencies.lifecycleCompiler
+    kapt dependencies.roomCompiler
+
+    compile dependencies.dagger
+    kapt dependencies.daggerCompiler
+    provided dependencies.glassfish
+    provided dependencies.jsr250
+
+    compile dependencies.securePref
+    compile dependencies.appcompat
+    compile dependencies.design
+    compile dependencies.constraintLayout
+
+    compile dependencies.retrofit
+    compile dependencies.loggingInterceptor
+    compile dependencies.converterGson
+    compile dependencies.gson
+
+    testCompile testDependencies.junit
+    testCompile testDependencies.assertj
+    testCompile testDependencies.mockito
+    testCompile testDependencies.hamcrest
+    testCompile testDependencies.powermockModule
+    testCompile testDependencies.powermockAPI
+
+}
+

@@ -1,0 +1,36 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+apply from: 'build_configuration/ci.gradle'
+apply from: 'build_configuration/dependencies.gradle'
+
+buildscript {
+    ext.kotlin_version = '1.1.2-4'
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.0.0-alpha9'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        maven { url 'https://maven.google.com' }
+    }
+
+    ext {
+        androidApplicationId = 'com.androidarchitecture'
+        androidVersionCode = 1
+        androidVersionName = "1.0"
+        testInstrumentationRunner = "android.support.test.runner.AndroidJUnitRunner"
+        testApplicationId = 'com.androidarchitecture.test'
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
